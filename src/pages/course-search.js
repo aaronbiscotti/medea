@@ -1,78 +1,42 @@
 import { Fragment, useState, useEffect } from 'react'
-import { Disclosure, Listbox, Menu, Transition } from '@headlessui/react'
-import {
-    ArrowNarrowLeftIcon,
-    ArrowNarrowRightIcon,
-    BriefcaseIcon,
-    CalendarIcon,
-    CheckCircleIcon,
-    CheckIcon,
-    ChevronDownIcon,
-    ChevronRightIcon,
-    CurrencyDollarIcon,
-    LinkIcon,
-    LocationMarkerIcon,
-    MailIcon,
-    PencilIcon,
-    SearchIcon,
-} from '@heroicons/react/solid'
 import Sidebar from '@/components/Sidebar'
-
-const tabs = [
-    { courseID: 'Applied', href: '#', count: '2', current: false },
-    { courseID: 'Phone Screening', href: '#', count: '4', current: false },
-    { courseID: 'Interview', href: '#', count: '6', current: true },
-    { courseID: 'Offer', href: '#', current: false },
-    { courseID: 'Disqualified', href: '#', current: false },
-]
-const candidates = [
-    {
-        courseID: 'Emily Selman',
-        category: 'emily.selman@example.com',
-        imageUrl:
-            'https://images.unsplash.com/photo-1502685104226-ee32379fefbe?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-        applied: 'January 7, 2020',
-        appliedDatetime: '2020-07-01T15:34:56',
-        status: 'Completed phone screening',
-    },
-]
-const publishingOptions = [
-    { courseID: 'Published', description: 'This job posting can be viewed by anyone who has the link.', current: true },
-    { courseID: 'Draft', description: 'This job posting will no longer be publicly accessible.', current: false },
-]
-
-function classNames(...classes) {
-    return classes.filter(Boolean).join(' ')
-}
-
-const data = [
-    { courseID: 'Zee Roblox', courseName: 'Indian', category: 'tanga@bxscience.edu', action: 'Member' },
-    { courseID: 'Ben Chong', courseName: 'Sex', category: 'engineerg', action: 'Member' },
-    { courseID: 'Will Kim', courseName: 'Baby', category: 'walt', action: 'Member' },
-    { courseID: 'Jeffrey Li', courseName: 'Idiot', category: 'kimw11@gmail.com', action: 'Member' },
-    { courseID: 'Chelsea Li', courseName: 'Student', category: 'lindsay.walton@', action: 'Member' },
-]
-
+import { firestore } from '../../firebase/initFirebase'
+import { collection, query, onSnapshot } from "firebase/firestore";
 export default function CourseSearch() {
-    const [selected, setSelected] = useState(publishingOptions[0])
     const [searchQuery, setSearchQuery] = useState("");
-    const [filteredData, setFilteredData] = useState(data);
+    const [courses, setCourses] = useState([]);
+    const [filteredData, setFilteredData] = useState([]);
+
     useEffect(() => {
-        const filtered = data.filter((item) =>
-            item.courseID.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            item.courseName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            item.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            item.action.toLowerCase().includes(searchQuery.toLowerCase())
+        const coursesRef = collection(firestore, "courses");
+        const q = query(coursesRef);
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
+            const coursesArray = [];
+            querySnapshot.forEach((doc) => {
+                coursesArray.push({ id: doc.id, ...doc.data() });
+            });
+            setCourses(coursesArray);
+            setFilteredData(coursesArray);
+        })
+
+        return () => {
+            unsubscribe();
+        }
+    }, []);
+
+
+    useEffect(() => {
+        const filtered = courses.filter((item) =>
+            item.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            item.topic.toLowerCase().includes(searchQuery.toLowerCase())
         );
         setFilteredData(filtered);
 
         if (searchQuery == "") {
-            setFilteredData(data);
+            setFilteredData(courses);
         }
     }, [searchQuery]);
-
-
-
     return (
         <>
             <div className="min-h-full">
@@ -131,19 +95,19 @@ export default function CourseSearch() {
                                                     </tr>
                                                 </thead>
                                                 <tbody className="divide-y divide-gray-200 bg-white">
-                                                    {filteredData.map((person) => (
-                                                        <tr key={person.category}>
+                                                    {filteredData.map((course) => (
+                                                        <tr key={course.category}>
                                                             <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
-                                                                {person.courseID}
+                                                                {course.id}
                                                             </td>
-                                                            <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{person.courseName}</td>
-                                                            <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{person.category}</td>
+                                                            <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{course.name}</td>
+                                                            <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{course.topic}</td>
                                                             <td className="whitespace-nowrap px-3 py-4 text-sm text-black">
-                                                                <span className="bg-green-200 rounded-full px-3 py-1">{person.action}</span>
+                                                                <span className="bg-green-200 rounded-full px-3 py-1">Qualified</span>
                                                             </td>
                                                             <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                                                                 <a href="#" className="text-indigo-600 hover:text-indigo-900">
-                                                                    Edit<span className="sr-only">, {person.courseID}</span>
+                                                                    Edit<span className="sr-only">, {course.ID}</span>
                                                                 </a>
                                                             </td>
                                                         </tr>

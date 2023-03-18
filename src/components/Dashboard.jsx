@@ -1,8 +1,9 @@
-import { Fragment, useState } from 'react'
+import { Fragment, useEffect, useState, useCallback } from 'react'
 import { Menu, Transition } from '@headlessui/react'
 import {
     CogIcon,
     CreditCardIcon,
+    HomeIcon,
     MenuAlt1Icon,
     QuestionMarkCircleIcon,
     ScaleIcon,
@@ -19,10 +20,21 @@ import {
     SearchIcon,
 } from '@heroicons/react/solid'
 import Sidebar from './Sidebar';
+import { firestore } from '../../firebase/initFirebase'
+import { collection, query, onSnapshot } from "firebase/firestore";
 import SubmitTranscript from './SubmitTranscript';
+import RecommendedCourses from './RecommendedCourses';
+// import { recommendCourses, getCourseJSON } from "../chatgpt";
 
-import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+
+// const q = query(collection(db, "courses"), where("topic", "==", "English"));
+
+// const querySnapshot = await getDocs(q);
+// querySnapshot.forEach((doc) => {
+//     // doc.data() is never undefined for query doc snapshots
+//     console.log(doc.id, " => ", doc.data());
+// });
+
 
 const cards = [
     { name: 'Select courses', href: '#', icon: ScaleIcon, dueDate: 123 },
@@ -30,10 +42,11 @@ const cards = [
     { name: 'Build your college list', href: '#', icon: ScaleIcon, dueDate: 123 },
 ]
 const schedule = [
-    { name: 'AP American Studies: US History', href: '#', icon: ScaleIcon, roomNumber: 123, teacher: "Todd Davis" },
-    { name: 'AP American Studies: US History', href: '#', icon: ScaleIcon, roomNumber: 123, teacher: "Todd Davis" },
-    { name: 'AP American Studies: US History', href: '#', icon: ScaleIcon, roomNumber: 123, teacher: "Todd Davis" },
+    { name: 'AP American Studies: US History', href: '/', icon: ScaleIcon, roomNumber: 123, teacher: "Todd Davis" },
+    { name: 'Precalculus', href: '/course_description', icon: ScaleIcon, roomNumber: 123, teacher: "Priscilla Won" },
+    { name: 'AP Physics 1', href: '/course_description', icon: ScaleIcon, roomNumber: 123, teacher: "Adnan Iqbal" },
 ]
+
 
 
 function classNames(...classes) {
@@ -41,19 +54,33 @@ function classNames(...classes) {
 }
 
 export default function Dashboard() {
-    const [sidebarOpen, setSidebarOpen] = useState(false)
+
+    // const [courses, setCourses] = useState("");
+
+    // const handleButtonClick = useCallback(() => {
+    //     setCourses(generate());
+    // }, []);
+
+    // useEffect(() => {
+    //     async function fetchData() {
+    //         const courseJSON = await getCourseJSON();
+    //         const newCourses = await recommendCourses(courseJSON);
+    //         setCourses(courseJSON);
+    //         // setRecommendedCourses(newCourses);
+    //     }
+
+    //     fetchData();
+    // }, []);
 
     return (
         <>
             <div className="min-h-full">
                 <Sidebar />
-
                 <div className="lg:pl-64 flex flex-col flex-1">
                     <div className="relative z-10 flex-shrink-0 flex h-16 bg-white border-b border-gray-200 lg:border-none">
                         <button
                             type="button"
                             className="px-4 border-r border-gray-200 text-gray-400 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-cyan-500 lg:hidden"
-                            onClick={() => setSidebarOpen(true)}
                         >
                             <span className="sr-only">Open sidebar</span>
                             <MenuAlt1Icon className="h-6 w-6" aria-hidden="true" />
@@ -65,7 +92,6 @@ export default function Dashboard() {
                         <div className="bg-white shadow flex justify-between border-gray-200 pb-5">
                             {mainProfile()}
                             <div className="flex justify-center items-center">
-
                                 {profileDropDown()}
                             </div>
                         </div>
@@ -73,7 +99,6 @@ export default function Dashboard() {
 
                         <div className="mt-8">
                             {tasks()}
-
                             <h2 className="mx-auto mt-8 px-4 text-lg leading-6 font-medium text-gray-900 sm:px-6 lg:px-8">
                                 Schedule
                             </h2>
@@ -123,8 +148,6 @@ export default function Dashboard() {
                                     </div>
                                 </nav>
                             </div>
-
-                            {/* Activity table (small breakpoint and up) */}
                             <div className="hidden sm:block">
                                 <div className="mx-auto px-4 sm:px-6 lg:px-8">
                                     <div className="flex flex-col mt-2">
@@ -185,6 +208,18 @@ export default function Dashboard() {
                             </div>
                         </div>
                     </main>
+                    {/* <button
+                        onClick={handleButtonClick}
+                        type="button"
+                        className="w-[350px] mt-10 ml-10 inline-flex items-center px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    >
+                        Recommend courses
+                    </button> */}
+                    {/* <p>{courses}</p> */}
+
+                    {/* <pre>{courses ? JSON.stringify(courses, null, 2) : 'Loading...'}</pre> */}
+                    {/* <h1>Recommended Courses:</h1> */}
+                    {/* <pre>{recommendCourses ? (recommendCourses, null, 2) : 'Loading...'}</pre> */}
                 </div>
             </div>
         </>
@@ -192,6 +227,23 @@ export default function Dashboard() {
 }
 
 function mainProfile() {
+    const [userInfo, setUserInfo] = useState([]);
+
+    useEffect(() => {
+        const coursesRef = collection(firestore, "users");
+        const q = query(coursesRef);
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
+            const userInformation = [];
+            querySnapshot.forEach((doc) => {
+                userInformation.push({ id: doc.id, ...doc.data() });
+            });
+            setUserInfo(userInformation);
+        })
+
+        return () => {
+            unsubscribe();
+        }
+    }, []);
     return (
         <div className="flex items-center ml-12">
             <img
@@ -207,7 +259,7 @@ function mainProfile() {
                         alt=""
                     />
                     <h1 className="ml-3 text-2xl font-bold leading-7 text-gray-900 sm:leading-9 sm:truncate">
-                        Hello, Buttcake
+                        Hello, {userInfo.map((user) => user.first_name)}
                     </h1>
                 </div>
                 <dl className="mt-6 flex flex-col sm:ml-3 sm:mt-1 sm:flex-row sm:flex-wrap">
@@ -217,15 +269,11 @@ function mainProfile() {
                             className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400"
                             aria-hidden="true"
                         />
-                        OSIS
+                        OSIS: {userInfo.map((user) => user.osis)}
                     </dd>
                     <dt className="sr-only">Account status</dt>
                     <dd className="mt-3 flex items-center text-sm text-gray-500 font-medium sm:mr-6 sm:mt-0 capitalize">
-                        <CheckCircleIcon
-                            className="flex-shrink-0 mr-1.5 h-5 w-5 text-green-400"
-                            aria-hidden="true"
-                        />
-                        Homeroom
+                        Homeroom: {userInfo.map((user) => user.off_class)}
                     </dd>
                 </dl>
             </div>
@@ -320,7 +368,64 @@ function tasks() {
 
                     </div>
                 ))}
+
             </div>
         </div>
     )
 }
+
+var input = `English /ENL / 1 Actual Mark 2019 / 1 10X445 EEN41 ENGLISH 9 94 BERGER 2.00/2.00 2020 / 1 10X445 EES83 ENGLISH 10 98 LEWIS 1.00/1.00 2020 / 2 10X445 EES84 ENGLISH 10 99 LEWIS 1.00/1.00 2021 / 1 10X445 EEN43 ENGLISH 11 94 ALLEN 2.00/2.00 Subject Area : Actual Credits / Credits Earned : 6.00 / 6.00 Subject Area Average : 95.50% Credits Averaged : 6.00 Social Studies / 2 Actual Mark 2019 / 1 10X445 HGN21 GLOBAL HISTORY 98 LUBIN 2.00/2.00 2020 / 1 10X445 HGS43XW AP WORLD HISTOR 95 GONZOWITZ 1.00/1.00 2020 / 2 10X445 HGS44XW AP WORLD HISTOR 99 GONZOWITZ 1.00/1.00 2021 / 1 10X445 HUN11X AP US HISTORY 96 STEIKER 2.00/2.00 Subject Area : Actual Credits / Credits Earned : 6.00 / 6.00 Subject Area Average : 97.00% Credits Averaged : 6.00 Mathematics / 3 Actual Mark 2018 / 1 26Q172 MEN11A ALGEBRA 98 2.00/2.00 2019 / 1 10X445 MGN11H GEOMETRY HONORS 92 CHEUNG 2.00/2.00 2020 / 1 10X445 MRS21H HONORS ALG2&TRI 97 LI H 1.00/1.00 2020 / 2 10X445 MRS22H HONORS ALG2&TRI 98 LI H 1.00/1.00 2021 / 1 10X445 MKN11X AP COMP SCI A 100 QIU W 2.00/2.00 2021 / 1 10X445 MPN1ORS PRECALC 98 WENG 2.00/2.00 Subject Area : Actual Credits / Credits Earned : 10.00 / 10.00 Subject Area Average : 97.10% Credits Averaged : 10.00 Sciences / 4 Actual Mark 2018 / 1 26Q172 SLN11A LIVING ENV 98 2.00/2.00 2019 / 1 10X445 SCN11QF CHEMISTRY 95 MEYER L 2.00/2.00 2019 / 1 10X445 SKS11Q2 ELEMENTS OF ENG 100 WOMER 1.00/1.00 2019 / 1 10X445 SWS11QJ1 SCIENCE RESEARC 88 DIMOULAS 1.00/1.00 2020 / 1 10X445 SCS21X AP CHEMISTRY 97 MEYER L 1.00/1.00 2020 / 2 10X445 SCS22X AP CHEMISTRY 97 MEYER L 1.00/1.00 2021 / 1 10X445 SPN11X1 AP PHYSICS 1 95 SEOH 2.00/2.00 Subject Area : Actual Credits / Credits Earned : 10.00 / 10.00 Subject Area Average : 95.80% Credits Averaged : 10.00 Foreign Language / 5 Actual Mark 2018 / 1 26Q172 FSN31A SPANISH I 93 2.00/2.00 2019 / 1 10X445 FSN32 SPANISH LEVEL 2 98 VASQUEZ 2.00/2.00 2020 / 1 10X445 FSS65 SPANISH LEVEL 3 93 SANSON 1.00/1.00 2020 / 2 10X445 FSS66 SPANISH LEVEL 3 97 SANSON 1.00/1.00 Subject Area : Actual Credits / Credits Earned : 6.00 / 6.00 Subject Area Average : 95.33% Credits Averaged : 6.00 The Arts / 7 Actual Mark 2018 / 7 10X445 CJF11 DRAMA 88 HANNON 1.00/1.00 2018 / 7 10X445 UHF11 MUSIC 94 MCNEIL 1.00/1.00 Subject Area : Actual Credits / Credits Earned : 2.00 / 2.00 Subject Area Average : 91.00% Credits Averaged : 2.00 Health/Physical Education / 8 Actual Mark 2018 / 7 10X445 PHF11 HEALTH 95 SCHORR 1.00/1.00 2019 / 1 10X445 PPN11QA PHYS ED 100* KONSTANTAK 1.00/1.00 2020 / 1 10X445 PPS11 PHYS ED 99* OHARA 0.50/0.50 2020 / 2 10X445 PPS11 PHYS ED 96* OHARA 0.50/0.50  FALLON 1.00/1.00 Subject Area : Actual Credits / Credits Earned : 4.00 2 HXRCE GLOBAL II  `
+
+const { Configuration, OpenAIApi } = require("openai");
+
+
+const configuration = new Configuration({
+    organization: "org-z7m6hqrQHuHbpI0K9pYlJiR0",
+    apiKey: "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"
+});
+
+
+
+const openai = new OpenAIApi(configuration);
+
+export async function recommendCourses(courses) {
+    console.log('hi');
+    const completion = await openai.createChatCompletion({
+        model: "gpt-3.5-turbo",
+        messages: [
+            {
+                role: "system",
+                content:
+                    "Return in JSON format. You will be given previous courses by a student, and recommend future courses to them based on their old courses and give a brief description. Make sure to give not taken courses" + courses,
+            },
+            {
+                role: "user",
+                content: courses,
+            },
+        ],
+        max_tokens: 1000,
+    });
+
+    return completion.data.choices[0].message;
+};
+
+var courses = '';
+export async function getCourseJSON() {
+    const question = "Can you take this text data from the input, and seperate in JSON format with the name of each map being a subject, IE English, Social Studies, Mathematics. Each subject will contain a key, which name is the course, so like English 9: 94, which is the grade of the course. Keep all the english courses in one section and so on for all the subject. Make sure it is not the course ID, but the course name. So like Algebra Return a json with all of it:  " + input;
+    const completion = await openai.createCompletion({
+        model: "text-davinci-003",
+        prompt: question,
+        max_tokens: 1000
+    });
+    return completion.data.choices[0].text;
+}
+
+
+export async function generate() {
+    const courses = await getCourseJSON();
+    console.log(courses);
+    const newcourses = await recommendCourses(courses)
+    console.log(newcourses);
+    return newcourses;
+
+};

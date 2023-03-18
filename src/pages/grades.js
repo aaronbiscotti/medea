@@ -1,13 +1,14 @@
+import RecommendedCourses from '@/components/RecommendedCourses'
 import Sidebar from '@/components/Sidebar'
 import SubmitTranscript from '@/components/SubmitTranscript'
 import React from 'react'
 import { Fragment } from 'react'
 const locations = [
     {
-        name: 'Edinburgh',
+        name: 'English',
         people: [
-            { name: 'Lindsay Walton', title: 'Front-end Developer', email: 'lindsay.walton@example.com', role: 'Member' },
-            { name: 'Courtney Henry', title: 'Designer', email: 'courtney.henry@example.com', role: 'Admin' },
+            { subject: 'English 9', gpa: '99', credits_earned: '2.00' },
+            { subject: 'English 10', gpa: '100', credits_earned: '1.00' },
         ],
     },
 ]
@@ -44,32 +45,26 @@ const grades = () => {
                                             <thead className="bg-white">
                                                 <tr>
                                                     <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">
-                                                        Name
+                                                        Subject
                                                     </th>
                                                     <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                                                        Title
+                                                        GPA
                                                     </th>
                                                     <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                                                        Email
-                                                    </th>
-                                                    <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                                                        Role
-                                                    </th>
-                                                    <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6">
-                                                        <span className="sr-only">Edit</span>
+                                                        Credits Earned
                                                     </th>
                                                 </tr>
                                             </thead>
                                             <tbody className="bg-white">
-                                                {locations.map((location) => (
-                                                    <Fragment key={location.name}>
+                                                {locations.map((location, i) => (
+                                                    <Fragment key={i}>
                                                         <tr className="border-t border-gray-200">
                                                             <th
                                                                 colSpan={5}
                                                                 scope="colgroup"
                                                                 className="bg-gray-50 px-4 py-2 text-left text-sm font-semibold text-gray-900 sm:px-6"
                                                             >
-                                                                {location.name}
+                                                                English Language Arts
                                                             </th>
                                                         </tr>
                                                         {location.people.map((person, personIdx) => (
@@ -78,16 +73,10 @@ const grades = () => {
                                                                 className={classNames(personIdx === 0 ? 'border-gray-300' : 'border-gray-200', 'border-t')}
                                                             >
                                                                 <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
-                                                                    {person.name}
+                                                                    {person.subject}
                                                                 </td>
-                                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{person.title}</td>
-                                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{person.email}</td>
-                                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{person.role}</td>
-                                                                <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                                                                    <a href="#" className="text-indigo-600 hover:text-indigo-900">
-                                                                        Edit<span className="sr-only">, {person.name}</span>
-                                                                    </a>
-                                                                </td>
+                                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{person.gpa}</td>
+                                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{person.credits_earned}</td>
                                                             </tr>
                                                         ))}
                                                     </Fragment>
@@ -99,11 +88,16 @@ const grades = () => {
                             </div>
                         </div>
                     </div>
-
+                    <div className="mt-5">
+                        <RecommendedCourses />
+                    </div>
                 </div>
             </main>
         </div>
     )
 }
 
+
+
 export default grades
+
