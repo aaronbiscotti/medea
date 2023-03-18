@@ -12,3 +12,9 @@ const clientCredentials = {
     appId: "1:200117037823:web:7579feffdc61ed53c2baca",
     measurementId: "G-3539M05PFZ"
 }
+
+export default function initFirebase(){
+   if (!firebase.apps.length) {
+      firebase.initializeApp(clientCredentials)
+   }
+}
